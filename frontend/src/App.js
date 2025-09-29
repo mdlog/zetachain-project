@@ -8,9 +8,9 @@ import { Badge } from "./components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Progress } from "./components/ui/progress";
 import { Separator } from "./components/ui/separator";
+import config from "./config";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API = config.API_BASE_URL;
 
 const Dashboard = () => {
   const [analytics, setAnalytics] = useState(null);
@@ -21,6 +21,11 @@ const Dashboard = () => {
   const [protocols, setProtocols] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedChain, setSelectedChain] = useState('all');
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [zetachainStatus, setZetachainStatus] = useState(null);
+  const [apiStatus, setApiStatus] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -28,15 +33,19 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [analyticsRes, poolsRes, portfolioRes, arbitrageRes, chainsRes, protocolsRes] = await Promise.all([
-        axios.get(`${API}/analytics/overview`),
-        axios.get(`${API}/pools`),
-        axios.get(`${API}/portfolio`),
-        axios.get(`${API}/arbitrage`),
-        axios.get(`${API}/chains`),
-        axios.get(`${API}/protocols`)
+      const [apiStatusRes, zetachainStatusRes, analyticsRes, poolsRes, portfolioRes, arbitrageRes, chainsRes, protocolsRes] = await Promise.all([
+        axios.get(`${API}/`).catch(() => ({ data: { error: 'API not available' } })),
+        axios.get(`${API}/zetachain/status`).catch(() => ({ data: { error: 'ZetaChain not available' } })),
+        axios.get(`${API}/analytics/overview`).catch(() => ({ data: null })),
+        axios.get(`${API}/pools`).catch(() => ({ data: [] })),
+        axios.get(`${API}/portfolio`).catch(() => ({ data: [] })),
+        axios.get(`${API}/arbitrage`).catch(() => ({ data: [] })),
+        axios.get(`${API}/chains`).catch(() => ({ data: [] })),
+        axios.get(`${API}/protocols`).catch(() => ({ data: [] }))
       ]);
 
+      setApiStatus(apiStatusRes.data);
+      setZetachainStatus(zetachainStatusRes.data);
       setAnalytics(analyticsRes.data);
       setPools(poolsRes.data);
       setPortfolio(portfolioRes.data);
@@ -47,6 +56,35 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error fetching data:', error);
       setLoading(false);
+    }
+  };
+
+  const connectWallet = async () => {
+    try {
+      if (typeof window.ethereum !== 'undefined') {
+        const accounts = await window.ethereum.request({
+          method: 'eth_requestAccounts'
+        });
+        
+        if (accounts.length > 0) {
+          const address = accounts[0];
+          setWalletAddress(address);
+          setWalletConnected(true);
+          
+          // Fetch wallet balance
+          try {
+            const balanceRes = await axios.get(`${API}/zetachain/balance/${address}`);
+            setWalletBalance(balanceRes.data);
+          } catch (error) {
+            console.error('Error fetching wallet balance:', error);
+          }
+        }
+      } else {
+        alert('Please install MetaMask or another Web3 wallet');
+      }
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+      alert('Failed to connect wallet');
     }
   };
 
@@ -97,12 +135,34 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                ⚡ ZetaChain Powered
-              </Badge>
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" data-testid="connect-wallet-btn">
-                Connect Wallet
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Badge className={`${apiStatus?.zetachain_connected ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                  {apiStatus?.zetachain_connected ? '✅' : '❌'} ZetaChain
+                </Badge>
+                <Badge className={`${apiStatus?.database_connected ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                  {apiStatus?.database_connected ? '✅' : '❌'} Database
+                </Badge>
+              </div>
+              {walletConnected ? (
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                    {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                  </Badge>
+                  {walletBalance && (
+                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                      {walletBalance.balance_zeta.toFixed(2)} ZETA
+                    </Badge>
+                  )}
+                </div>
+              ) : (
+                <Button 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" 
+                  data-testid="connect-wallet-btn"
+                  onClick={connectWallet}
+                >
+                  Connect Wallet
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -192,6 +252,9 @@ const Dashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="optimizer" className="data-[state=active]:bg-white/10" data-testid="optimizer-tab">
               🎯 AI Optimizer
+            </TabsTrigger>
+            <TabsTrigger value="status" className="data-[state=active]:bg-white/10" data-testid="status-tab">
+              📊 Network Status
             </TabsTrigger>
           </TabsList>
 
@@ -520,6 +583,120 @@ const Dashboard = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Network Status Tab */}
+          <TabsContent value="status" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* API Status */}
+              <Card className="bg-black/40 border-gray-700 backdrop-blur-lg">
+                <CardHeader>
+                  <CardTitle className="text-white">🔗 API Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Backend API</span>
+                      <Badge className={apiStatus?.error ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}>
+                        {apiStatus?.error ? '❌ Offline' : '✅ Online'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">ZetaChain Connection</span>
+                      <Badge className={apiStatus?.zetachain_connected ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}>
+                        {apiStatus?.zetachain_connected ? '✅ Connected' : '❌ Disconnected'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Database</span>
+                      <Badge className={apiStatus?.database_connected ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}>
+                        {apiStatus?.database_connected ? '✅ Connected' : '❌ Disconnected'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Supported Chains</span>
+                      <span className="text-white">{apiStatus?.supported_chains?.length || 0}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* ZetaChain Status */}
+              <Card className="bg-black/40 border-gray-700 backdrop-blur-lg">
+                <CardHeader>
+                  <CardTitle className="text-white">⚡ ZetaChain Network</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {zetachainStatus?.error ? (
+                    <div className="text-red-400">
+                      <p>❌ {zetachainStatus.error}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Network</span>
+                        <span className="text-white">{zetachainStatus?.network_name || 'Unknown'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Chain ID</span>
+                        <span className="text-white">{zetachainStatus?.chain_id || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Latest Block</span>
+                        <span className="text-white">{zetachainStatus?.latest_block?.toLocaleString() || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Gas Price</span>
+                        <span className="text-white">{zetachainStatus?.gas_price_gwei?.toFixed(2 || 'N/A')} Gwei</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Block Time</span>
+                        <span className="text-white">{config.ZETACHAIN.BLOCK_TIME}s</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Wallet Information */}
+            {walletConnected && (
+              <Card className="bg-black/40 border-gray-700 backdrop-blur-lg">
+                <CardHeader>
+                  <CardTitle className="text-white">👛 Wallet Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Address</span>
+                      <span className="text-white font-mono text-sm">{walletAddress}</span>
+                    </div>
+                    {walletBalance && (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">ZETA Balance</span>
+                          <span className="text-white">{walletBalance.balance_zeta.toFixed(4)} ZETA</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">USD Value</span>
+                          <span className="text-white">${walletBalance.balance_usd.toFixed(2)}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Refresh Button */}
+            <div className="text-center">
+              <Button 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                onClick={fetchData}
+              >
+                🔄 Refresh Status
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
