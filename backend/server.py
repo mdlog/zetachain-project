@@ -94,7 +94,7 @@ CHAINS_DATA = [
         "id": "ethereum",
         "name": "Ethereum",
         "symbol": "ETH", 
-        "logo": "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+        "logo": "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/eth.png",
         "rpc_url": "https://eth.llamarpc.com",
         "explorer_url": "https://etherscan.io",
         "native_token": "ETH",
@@ -105,7 +105,7 @@ CHAINS_DATA = [
         "id": "bsc",
         "name": "BNB Smart Chain",
         "symbol": "BNB",
-        "logo": "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+        "logo": "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/bnb.png",
         "rpc_url": "https://bsc-dataseed1.binance.org",
         "explorer_url": "https://bscscan.com",
         "native_token": "BNB",
@@ -116,7 +116,7 @@ CHAINS_DATA = [
         "id": "polygon",
         "name": "Polygon",
         "symbol": "MATIC",
-        "logo": "https://cryptologos.cc/logos/polygon-matic-logo.png",
+        "logo": "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/matic.png",
         "rpc_url": "https://polygon-rpc.com",
         "explorer_url": "https://polygonscan.com",
         "native_token": "MATIC",
@@ -127,7 +127,7 @@ CHAINS_DATA = [
         "id": "avalanche",
         "name": "Avalanche",
         "symbol": "AVAX",
-        "logo": "https://cryptologos.cc/logos/avalanche-avax-logo.png",
+        "logo": "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/avax.png",
         "rpc_url": "https://api.avax.network/ext/bc/C/rpc",
         "explorer_url": "https://snowtrace.io",
         "native_token": "AVAX",
@@ -138,7 +138,7 @@ CHAINS_DATA = [
         "id": "arbitrum",
         "name": "Arbitrum",
         "symbol": "ARB",
-        "logo": "https://cryptologos.cc/logos/arbitrum-arb-logo.png",
+        "logo": "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/arb.png",
         "rpc_url": "https://arb1.arbitrum.io/rpc",
         "explorer_url": "https://arbiscan.io",
         "native_token": "ETH",
@@ -151,7 +151,7 @@ PROTOCOLS_DATA = [
     {
         "id": "uniswap",
         "name": "Uniswap V3",
-        "logo": "https://cryptologos.cc/logos/uniswap-uni-logo.png",
+        "logo": "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/uni.png",
         "category": "DEX",
         "tvl_usd": 4200000000,
         "chains": ["ethereum", "polygon", "arbitrum"]
@@ -159,7 +159,7 @@ PROTOCOLS_DATA = [
     {
         "id": "aave",
         "name": "Aave",
-        "logo": "https://cryptologos.cc/logos/aave-aave-logo.png",
+        "logo": "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/aave.png",
         "category": "Lending",
         "tvl_usd": 7800000000,
         "chains": ["ethereum", "polygon", "avalanche", "arbitrum"]
@@ -167,7 +167,7 @@ PROTOCOLS_DATA = [
     {
         "id": "compound",
         "name": "Compound",
-        "logo": "https://cryptologos.cc/logos/compound-comp-logo.png",
+        "logo": "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/comp.png",
         "category": "Lending",
         "tvl_usd": 3100000000,
         "chains": ["ethereum", "polygon"]
@@ -175,7 +175,7 @@ PROTOCOLS_DATA = [
     {
         "id": "pancakeswap",
         "name": "PancakeSwap",
-        "logo": "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
+        "logo": "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/cake.png",
         "category": "DEX",
         "tvl_usd": 2400000000,
         "chains": ["bsc", "ethereum", "arbitrum"]
@@ -183,7 +183,7 @@ PROTOCOLS_DATA = [
     {
         "id": "curve",
         "name": "Curve Finance",
-        "logo": "https://cryptologos.cc/logos/curve-dao-token-crv-logo.png",
+        "logo": "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/crv.png",
         "category": "DEX",
         "tvl_usd": 1900000000,
         "chains": ["ethereum", "polygon", "arbitrum", "avalanche"]
