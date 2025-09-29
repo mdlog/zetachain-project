@@ -1,10 +1,31 @@
-import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { zetaTestnet, mainnet, bsc, polygon, avalanche, arbitrum } from 'wagmi/chains';
+import { createConfig, http } from 'wagmi';
+import { mainnet, bsc, polygon, avalanche, arbitrum } from 'wagmi/chains';
+import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors';
 
-// ZetaChain testnet configuration
-const zetaChain = {
+// ZetaChain mainnet configuration
+const zetaChainMainnet = {
+    id: 7000,
+    name: 'ZetaChain Mainnet',
+    network: 'zetachain-mainnet',
+    nativeCurrency: {
+        decimals: 18,
+        name: 'ZetaChain',
+        symbol: 'ZETA',
+    },
+    rpcUrls: {
+        public: { http: ['https://zetachain-evm.blockpi.network/v1/rpc/public'] },
+        default: { http: ['https://zetachain-evm.blockpi.network/v1/rpc/public'] },
+    },
+    blockExplorers: {
+        default: { name: 'ZetaChain Explorer', url: 'https://explorer.zetachain.com' },
+    },
+    testnet: false,
+};
+
+// ZetaChain testnet configuration (for fallback)
+const zetaChainTestnet = {
     id: 7001,
-    name: 'ZetaChain Athens',
+    name: 'ZetaChain Athens Testnet',
     network: 'zetachain-athens',
     nativeCurrency: {
         decimals: 18,
@@ -21,23 +42,44 @@ const zetaChain = {
     testnet: true,
 };
 
-export const config = getDefaultConfig({
-    appName: 'OmniYield',
-    projectId: process.env.REACT_APP_WALLETCONNECT_PROJECT_ID || 'omniyield-zetachain-demo', // You can get this from WalletConnect Cloud
+export const config = createConfig({
     chains: [
-        zetaChain, // ZetaChain as primary
+        zetaChainMainnet, // ZetaChain Mainnet as primary
+        zetaChainTestnet, // ZetaChain Testnet as fallback
         mainnet,
         bsc,
         polygon,
         avalanche,
         arbitrum,
     ],
-    ssr: false, // If your dApp uses server side rendering (SSR)
+    connectors: [
+        injected(),
+        walletConnect({
+            projectId: process.env.REACT_APP_WALLETCONNECT_PROJECT_ID || 'omniyield-zetachain-demo',
+        }),
+        coinbaseWallet({
+            appName: 'OmniYield',
+        }),
+    ],
+    transports: {
+        [zetaChainMainnet.id]: http(),
+        [zetaChainTestnet.id]: http(),
+        [mainnet.id]: http(),
+        [bsc.id]: http(),
+        [polygon.id]: http(),
+        [avalanche.id]: http(),
+        [arbitrum.id]: http(),
+    },
+    ssr: false,
 });
 
 export const supportedChains = [
     {
-        ...zetaChain,
+        ...zetaChainMainnet,
+        iconUrl: 'https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/zeta.png',
+    },
+    {
+        ...zetaChainTestnet,
         iconUrl: 'https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/zeta.png',
     },
     {

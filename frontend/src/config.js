@@ -3,21 +3,34 @@ export const config = {
   // Backend API Configuration
   BACKEND_URL: process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000',
   API_BASE_URL: `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000'}/api`,
-  
+
   // ZetaChain Configuration
   ZETACHAIN: {
-    RPC_URL: process.env.REACT_APP_ZETACHAIN_RPC_URL || 'https://zetachain-athens-evm.blockpi.network/v1/rpc/public',
-    CHAIN_ID: parseInt(process.env.REACT_APP_ZETACHAIN_CHAIN_ID || '7001'),
+    // Mainnet Configuration
+    RPC_URL: process.env.REACT_APP_ZETACHAIN_RPC_URL || 'https://zetachain-evm.blockpi.network/v1/rpc/public',
+    CHAIN_ID: parseInt(process.env.REACT_APP_ZETACHAIN_CHAIN_ID || '7000'),
     EXPLORER_URL: process.env.REACT_APP_ZETACHAIN_EXPLORER_URL || 'https://explorer.zetachain.com',
     NATIVE_TOKEN: 'ZETA',
     BLOCK_TIME: 6, // seconds
+    NETWORK_TYPE: 'mainnet',
+    // Testnet Configuration (uncomment to use testnet)
+    // RPC_URL: process.env.REACT_APP_ZETACHAIN_RPC_URL || 'https://zetachain-athens-evm.blockpi.network/v1/rpc/public',
+    // CHAIN_ID: parseInt(process.env.REACT_APP_ZETACHAIN_CHAIN_ID || '7001'),
+    // NETWORK_TYPE: 'testnet',
   },
-  
+
   // Supported Networks
   SUPPORTED_NETWORKS: [
     {
+      chainId: 7000,
+      chainName: 'ZetaChain Mainnet',
+      nativeCurrency: { name: 'ZETA', symbol: 'ZETA', decimals: 18 },
+      rpcUrls: ['https://zetachain-evm.blockpi.network/v1/rpc/public'],
+      blockExplorerUrls: ['https://explorer.zetachain.com'],
+    },
+    {
       chainId: 7001,
-      chainName: 'ZetaChain Athens',
+      chainName: 'ZetaChain Athens Testnet',
       nativeCurrency: { name: 'ZETA', symbol: 'ZETA', decimals: 18 },
       rpcUrls: ['https://zetachain-athens-evm.blockpi.network/v1/rpc/public'],
       blockExplorerUrls: ['https://explorer.zetachain.com'],
@@ -58,7 +71,7 @@ export const config = {
       blockExplorerUrls: ['https://arbiscan.io'],
     }
   ],
-  
+
   // API Endpoints
   ENDPOINTS: {
     CHAINS: '/chains',
@@ -72,7 +85,7 @@ export const config = {
     ZETACHAIN_STATUS: '/zetachain/status',
     ZETACHAIN_BALANCE: '/zetachain/balance',
   },
-  
+
   // UI Configuration
   UI: {
     REFRESH_INTERVAL: 30000, // 30 seconds
@@ -80,7 +93,7 @@ export const config = {
     DEFAULT_SORT: 'apy',
     THEME: 'dark',
   },
-  
+
   // Error Messages
   ERRORS: {
     NETWORK_ERROR: 'Network connection error. Please check your internet connection.',
