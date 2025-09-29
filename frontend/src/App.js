@@ -8,6 +8,9 @@ import { Badge } from "./components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Progress } from "./components/ui/progress";
 import { Separator } from "./components/ui/separator";
+import { WalletProvider } from "./providers/WalletProvider";
+import WalletConnect from "./components/WalletConnect";
+import { useAccount } from "wagmi";
 import config from "./config";
 
 const API = config.API_BASE_URL;
@@ -21,11 +24,11 @@ const Dashboard = () => {
   const [protocols, setProtocols] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedChain, setSelectedChain] = useState('all');
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState('');
-  const [walletBalance, setWalletBalance] = useState(null);
   const [zetachainStatus, setZetachainStatus] = useState(null);
   const [apiStatus, setApiStatus] = useState(null);
+
+  // Use wagmi hooks for wallet connection
+  const { address, isConnected } = useAccount();
 
   useEffect(() => {
     fetchData();
@@ -59,35 +62,6 @@ const Dashboard = () => {
     }
   };
 
-  const connectWallet = async () => {
-    try {
-      if (typeof window.ethereum !== 'undefined') {
-        const accounts = await window.ethereum.request({
-          method: 'eth_requestAccounts'
-        });
-        
-        if (accounts.length > 0) {
-          const address = accounts[0];
-          setWalletAddress(address);
-          setWalletConnected(true);
-          
-          // Fetch wallet balance
-          try {
-            const balanceRes = await axios.get(`${API}/zetachain/balance/${address}`);
-            setWalletBalance(balanceRes.data);
-          } catch (error) {
-            console.error('Error fetching wallet balance:', error);
-          }
-        }
-      } else {
-        alert('Please install MetaMask or another Web3 wallet');
-      }
-    } catch (error) {
-      console.error('Error connecting wallet:', error);
-      alert('Failed to connect wallet');
-    }
-  };
-
   const getChainIcon = (chainId) => {
     const chain = chains.find(c => c.id === chainId);
     return chain?.logo || '';
@@ -99,7 +73,7 @@ const Dashboard = () => {
   };
 
   const getRiskColor = (risk) => {
-    switch(risk.toLowerCase()) {
+    switch (risk.toLowerCase()) {
       case 'low': return 'bg-green-100 text-green-800';
       case 'medium': return 'bg-yellow-100 text-yellow-800';
       case 'high': return 'bg-red-100 text-red-800';
@@ -107,8 +81,8 @@ const Dashboard = () => {
     }
   };
 
-  const filteredPools = selectedChain === 'all' 
-    ? pools 
+  const filteredPools = selectedChain === 'all'
+    ? pools
     : pools.filter(pool => pool.chain_id === selectedChain);
 
   if (loading) {
@@ -143,26 +117,7 @@ const Dashboard = () => {
                   {apiStatus?.database_connected ? '✅' : '❌'} Database
                 </Badge>
               </div>
-              {walletConnected ? (
-                <div className="flex items-center space-x-2">
-                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                    {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-                  </Badge>
-                  {walletBalance && (
-                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
-                      {walletBalance.balance_zeta.toFixed(2)} ZETA
-                    </Badge>
-                  )}
-                </div>
-              ) : (
-                <Button 
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" 
-                  data-testid="connect-wallet-btn"
-                  onClick={connectWallet}
-                >
-                  Connect Wallet
-                </Button>
-              )}
+              <WalletConnect />
             </div>
           </div>
         </div>
@@ -265,7 +220,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white">🏊 Best Yield Opportunities</CardTitle>
                   <div className="flex items-center space-x-4">
-                    <select 
+                    <select
                       value={selectedChain}
                       onChange={(e) => setSelectedChain(e.target.value)}
                       className="bg-gray-800 text-white rounded-lg px-3 py-2 border border-gray-600"
@@ -283,7 +238,7 @@ const Dashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {filteredPools.slice(0, 8).map((pool) => (
                     <div key={pool.id} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
                       <div className="flex items-center justify-between mb-3">
@@ -297,7 +252,7 @@ const Dashboard = () => {
                             <p className="text-gray-400 text-sm">{pool.symbol}</p>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
                           <Badge className={getRiskColor(pool.il_risk)}>
                             {pool.il_risk} Risk
                           </Badge>
@@ -306,8 +261,8 @@ const Dashboard = () => {
                           )}
                         </div>
                       </div>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+
+                      <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
                           <p className="text-gray-400 text-xs">APY</p>
                           <p className="text-green-400 font-bold text-lg" data-testid={`pool-apy-${pool.id}`}>
@@ -334,7 +289,7 @@ const Dashboard = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <span className="text-gray-400 text-sm">Rewards:</span>
@@ -344,7 +299,7 @@ const Dashboard = () => {
                             </Badge>
                           ))}
                         </div>
-                        <Button 
+                        <Button
                           className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                           data-testid={`deposit-btn-${pool.id}`}
                         >
@@ -365,7 +320,7 @@ const Dashboard = () => {
                 <CardTitle className="text-white">💼 My Cross-Chain Portfolio</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {portfolio.map((position) => (
                     <div key={position.id} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
                       <div className="flex items-center justify-between mb-3">
@@ -389,8 +344,8 @@ const Dashboard = () => {
                           </p>
                         </div>
                       </div>
-                      
-                      <div className="grid grid-cols-3 gap-4 mb-3">
+
+                      <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
                           <p className="text-gray-400 text-xs">Deposited</p>
                           <p className="text-white">${position.deposited_amount_usd.toLocaleString()}</p>
@@ -405,21 +360,22 @@ const Dashboard = () => {
                             {new Date(position.last_compound).toLocaleDateString()}
                           </p>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <Progress 
-                          value={(position.current_value_usd / position.deposited_amount_usd - 1) * 100} 
-                          className="w-32 h-2" 
-                        />
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="outline" className="border-gray-600 text-gray-300" data-testid={`compound-btn-${position.id}`}>
-                            Compound
-                          </Button>
-                          <Button size="sm" variant="outline" className="border-gray-600 text-gray-300" data-testid={`withdraw-btn-${position.id}`}>
-                            Withdraw
-                          </Button>
+                        <div>
+                          <p className="text-gray-400 text-xs">Performance</p>
+                          <Progress
+                            value={(position.current_value_usd / position.deposited_amount_usd - 1) * 100}
+                            className="w-full h-2"
+                          />
                         </div>
+                      </div>
+
+                      <div className="flex justify-end space-x-2">
+                        <Button size="sm" variant="outline" className="border-gray-600 text-gray-300" data-testid={`compound-btn-${position.id}`}>
+                          Compound
+                        </Button>
+                        <Button size="sm" variant="outline" className="border-gray-600 text-gray-300" data-testid={`withdraw-btn-${position.id}`}>
+                          Withdraw
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -435,7 +391,7 @@ const Dashboard = () => {
                 <CardTitle className="text-white">⚡ Cross-Chain Arbitrage Opportunities</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {arbitrage.map((opp) => (
                     <div key={opp.id} className="bg-gradient-to-r from-green-900/30 to-emerald-900/30 rounded-lg p-4 border border-green-700/50">
                       <div className="flex items-center justify-between mb-3">
@@ -461,8 +417,8 @@ const Dashboard = () => {
                           </p>
                         </div>
                       </div>
-                      
-                      <div className="grid grid-cols-4 gap-4 mb-3">
+
+                      <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
                           <p className="text-gray-400 text-xs">Source Price</p>
                           <p className="text-white">${opp.source_price}</p>
@@ -482,7 +438,7 @@ const Dashboard = () => {
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="flex justify-end">
                         <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700" data-testid={`execute-arbitrage-${opp.id}`}>
                           Execute Trade
@@ -507,7 +463,7 @@ const Dashboard = () => {
                     <h3 className="text-2xl font-bold text-white mb-2">ZetaChain Universal Strategy</h3>
                     <p className="text-gray-400">AI-powered cross-chain yield optimization</p>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <h4 className="text-white font-semibold mb-3">Optimal Allocation</h4>
@@ -517,25 +473,25 @@ const Dashboard = () => {
                           <span className="text-white font-semibold">35%</span>
                         </div>
                         <Progress value={35} className="h-2" />
-                        
+
                         <div className="flex justify-between items-center">
                           <span className="text-gray-300">Polygon</span>
                           <span className="text-white font-semibold">25%</span>
                         </div>
                         <Progress value={25} className="h-2" />
-                        
+
                         <div className="flex justify-between items-center">
                           <span className="text-gray-300">BSC</span>
                           <span className="text-white font-semibold">20%</span>
                         </div>
                         <Progress value={20} className="h-2" />
-                        
+
                         <div className="flex justify-between items-center">
                           <span className="text-gray-300">Arbitrum</span>
                           <span className="text-white font-semibold">15%</span>
                         </div>
                         <Progress value={15} className="h-2" />
-                        
+
                         <div className="flex justify-between items-center">
                           <span className="text-gray-300">Avalanche</span>
                           <span className="text-white font-semibold">5%</span>
@@ -543,7 +499,7 @@ const Dashboard = () => {
                         <Progress value={5} className="h-2" />
                       </div>
                     </div>
-                    
+
                     <div>
                       <h4 className="text-white font-semibold mb-3">Strategy Metrics</h4>
                       <div className="space-y-4">
@@ -571,9 +527,9 @@ const Dashboard = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="mt-6 text-center">
-                    <Button 
+                    <Button
                       className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-8"
                       data-testid="apply-strategy-btn"
                     >
@@ -660,7 +616,7 @@ const Dashboard = () => {
             </div>
 
             {/* Wallet Information */}
-            {walletConnected && (
+            {isConnected && (
               <Card className="bg-black/40 border-gray-700 backdrop-blur-lg">
                 <CardHeader>
                   <CardTitle className="text-white">👛 Wallet Information</CardTitle>
@@ -669,20 +625,14 @@ const Dashboard = () => {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Address</span>
-                      <span className="text-white font-mono text-sm">{walletAddress}</span>
+                      <span className="text-white font-mono text-sm">{address}</span>
                     </div>
-                    {walletBalance && (
-                      <>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">ZETA Balance</span>
-                          <span className="text-white">{walletBalance.balance_zeta.toFixed(4)} ZETA</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">USD Value</span>
-                          <span className="text-white">${walletBalance.balance_usd.toFixed(2)}</span>
-                        </div>
-                      </>
-                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Status</span>
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                        ✅ Connected
+                      </Badge>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -690,7 +640,7 @@ const Dashboard = () => {
 
             {/* Refresh Button */}
             <div className="text-center">
-              <Button 
+              <Button
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                 onClick={fetchData}
               >
@@ -706,13 +656,15 @@ const Dashboard = () => {
 
 function App() {
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <WalletProvider>
+      <div className="App">
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+          </Routes>
+        </BrowserRouter>
+      </div>
+    </WalletProvider>
   );
 }
 
